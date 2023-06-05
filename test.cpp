@@ -11,19 +11,17 @@
 #include "parking_interface/msg/parking.hpp"
 #include "parking_interface/msg/parkinglst.hpp"
 
+using namespace std;
+
 #define BUFFER_MAX_VALUE 100
 #define DETECT_THRESH 0.8
 #define IOU_THRESH 0.8
 
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_fused_parking;
-double last_vio_t = -1;
 std::deque<parking_interface::msg::Parking::SharedPtr> radDeque;
 std::deque<parking_interface::msg::Parking::SharedPtr> imgDeque;
-std::mutex m_buf;
 parking_interface::msg::Parking::SharedPtr match_radar;
 parking_interface::msg::Parking::SharedPtr match_image;
-
-
 
 
 /*********************************/
@@ -145,26 +143,40 @@ float iou_poly(vector<float> p, vector<float> q) {
 float calculate_iou(parking_interface::msg::Parkinglst::SharedPtr rad_box, parking_interface::msg::Parkinglst::SharedPtr img_box){
     //rad_box、img_box转换为多边形
     vector<float>box1, box2;
-    box1.push_back(rad_box.x1);
-    box1.push_back(rad_box.y1);
-    box1.push_back(rad_box.x2);
-    box1.push_back(rad_box.y2);
-    box1.push_back(rad_box.x3);
-    box1.push_back(rad_box.y3);
-    box1.push_back(rad_box.x4);
-    box1.push_back(rad_box.y4);
+    float coord_min1 = min(rad_box.x1, rad_box.y1);
+    float coord_min2 = min(rad_box.x2, rad_box.y2);
+    float coord_min3 = min(rad_box.x3, rad_box.y3);
+    float coord_min4 = min(rad_box.x4, rad_box.y4);
+    float coord_min5 = min(coord_min1,coord_min2);
+    float coord_min6 = min(coord_min3,coord_min4);
+    float coord_min = min(coord_min5, coord_min6);
+    coord_min1 = min(img_box.x1, img_box.y1);
+    coord_min2 = min(img_box.x2, img_box.y2);
+    coord_min3 = min(img_box.x3, img_box.y3);
+    coord_min4 = min(img_box.x4, img_box.y4);
+    coord_min5 = min(coord_min1,coord_min2);
+    coord_min6 = min(coord_min3,coord_min4);
+    coord_min = min(coord_min, min(coord_min5,coord_min6));
+    box1.push_back(rad_box.x1 + coord_min);
+    box1.push_back(rad_box.y1 + coord_min);
+    box1.push_back(rad_box.x2 + coord_min);
+    box1.push_back(rad_box.y2 + coord_min);
+    box1.push_back(rad_box.x3 + coord_min);
+    box1.push_back(rad_box.y3 + coord_min);
+    box1.push_back(rad_box.x4 + coord_min);
+    box1.push_back(rad_box.y4 + coord_min);
     /*box1.push_back(Point(rad_box.x1, rad_box.y1));
     box1.push_back(Point(rad_box.x2, rad_box.y2));
     box1.push_back(Point(rad_box.x3, rad_box.y3));
     box1.push_back(Point(rad_box.x4, rad_box.y4));*/
-    box2.push_back(img_box.x1);
-    box2.push_back(img_box.y1);
-    box2.push_back(img_box.x2);
-    box2.push_back(img_box.y2);
-    box2.push_back(img_box.x3);
-    box2.push_back(img_box.y3);
-    box2.push_back(img_box.x4);
-    box2.push_back(img_box.y4);
+    box2.push_back(img_box.x1 + coord_min);
+    box2.push_back(img_box.y1 + coord_min);
+    box2.push_back(img_box.x2 + coord_min);
+    box2.push_back(img_box.y2 + coord_min);
+    box2.push_back(img_box.x3 + coord_min);
+    box2.push_back(img_box.y3 + coord_min);
+    box2.push_back(img_box.x4 + coord_min);
+    box2.push_back(img_box.y4 + coord_min);
     /*box2.push_back(Point(img_box.x1, img_box.y1));
     box2.push_back(Point(img_box.x2, img_box.y2));
     box2.push_back(Point(img_box.x3, img_box.y3));
@@ -244,7 +256,7 @@ void GetLatestFrames()
         if(dif == 0.0){
             match_image = imgDeque.at(i);
             clog<<"find it!!!"<<endl;
-            clog<<"match_image x1:"<<match_image.lst_result.at(0).x1<<endl;
+            clog<<"match_image x1:"<<match_image.parkinglst.at(0).x1<<endl;
             radDeque.pop_back();
             imgDeque.erase(imgDeque.begin()+index, imgDeque.begin()+index+1);
             return;
@@ -287,7 +299,6 @@ void image_callback(const parking_interface::msg::Parking::SharedPtr img_msg)
         imgDeque.push_back(img_msg);
     }
 }
-
 
 
 int main(int argc, char **argv)
