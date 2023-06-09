@@ -247,6 +247,7 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     fused_frame.parking= lst_res;
     pub_fused_parking->publish(fused_frame);
     clog<<"fused frame publishing..."<<endl;
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), std::str(fused_frame.header.stamp));
 }
 
 
@@ -255,15 +256,17 @@ void GetLatestFrames()
     clog<<"time stamp begin!"<<endl;
 
     match_radar = radDeque.back();
-    int timestamp = match_radar->header.stamp.sec;
+    long timestamp = match_radar->header.stamp.sec * (10 ^9) + match_radar -> header.stamp.nanosec;
     clog<<"timestamp"<<timestamp<<endl;
     int index = 0;
     int MIN_DIF =66666;
+    long dif;
     for(int i = 0; i < imgDeque.size(); i++){
         clog<<"begin find image frame to match"<<endl;
-        int dif = abs(timestamp - imgDeque.at(i)->header.stamp.sec);
-        clog<<"dif = "<<dif<<endl;
-        if(dif == 0.0){
+        long imgstamp = imgDeque.at(i)->header.stamp.sec * (10 ^ 9) + imgDeque.at(i)->header.stamp.nanosec; 
+        dif = abs(timestamp - imgstamp);
+        
+        if(dif == 0){
             index = i;
            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "find matched image");
           match_image = imgDeque.at(index);
@@ -279,7 +282,9 @@ void GetLatestFrames()
             }
         }
     }
+    
     clog<<"find it!!!"<<endl;
+    clog<<"dif = "<<dif/(10^9)<<endl;
     match_image = imgDeque.at(index);
 
     //提取要融合的两帧后将他们从buffer中删除

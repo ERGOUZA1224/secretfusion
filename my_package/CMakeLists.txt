@@ -25,6 +25,10 @@ find_package(std_msgs REQUIRED)
 # find_package(<dependency> REQUIRED)
 add_executable (Parkingfusion src/Parkingfusion.cpp)
 ament_target_dependencies(Parkingfusion std_msgs rclcpp parking_interface)
+add_executable (radar_pub src/radar_pub.cpp)
+ament_target_dependencies(radar_pub std_msgs rclcpp parking_interface)
+add_executable (image_pub src/image_pub.cpp)
+ament_target_dependencies(image_pub std_msgs rclcpp parking_interface)
 add_executable(my_node src/my_node.cpp)
 target_include_directories(my_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -35,6 +39,8 @@ install(TARGETS my_node
 
 install(TARGETS
   Parkingfusion
+  radar_pub
+  image_pub
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
