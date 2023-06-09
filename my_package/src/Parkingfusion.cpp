@@ -198,9 +198,16 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
     vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
     vector<parking_interface::msg::Parkinglst> lst_res;
+    clog<<"lst1 size"<<lst1.size()<<";lst2 size"<<lst2.size()<<endl;
+    if(lst1.size() == 0 || lst2.size() == 0){
+        lst_res = {};
+        clog<<"lst_res is empty"<<endl;
+    }
+    else{
     //LIST_RESULT deault_zero = {0,0,0,0,0,0,0,0,0,0};
     for(int i = 0; i < lst1.size(); i++){
         for(int j = 0; j < lst2.size(); j++){
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse,enter loop");
             parking_interface::msg::Parkinglst rad_box = lst1[i];
             parking_interface::msg::Parkinglst img_box = lst2[j];
             // 1. img_box在rad_box内
@@ -233,13 +240,13 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
                     continue;
                 }
             }
-
+        }
         }
     }
-    clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
+    //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
     fused_frame.parking= lst_res;
-    clog<<"fuse frame finished!"<<endl;
     pub_fused_parking->publish(fused_frame);
+    clog<<"fused frame publishing..."<<endl;
 }
 
 
@@ -255,10 +262,12 @@ void GetLatestFrames()
     for(int i = 0; i < imgDeque.size(); i++){
         clog<<"begin find image frame to match"<<endl;
         int dif = abs(timestamp - imgDeque.at(i)->header.stamp.sec);
+        clog<<"dif = "<<dif<<endl;
         if(dif == 0.0){
-            match_image = imgDeque.at(i);
-            clog<<"find it!!!"<<endl;
-            clog<<"match_image x1:"<<match_image->parking.at(0).x1<<endl;
+            index = i;
+           RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "find matched image");
+          match_image = imgDeque.at(index);
+            //clog<<"match_image x1:"<<match_image->parking.at(0).x1<<endl;
             //radDeque.pop_back();
             //imgDeque.erase(imgDeque.begin()+index, imgDeque.begin()+index+1);
             return;
@@ -270,7 +279,7 @@ void GetLatestFrames()
             }
         }
     }
-
+    clog<<"find it!!!"<<endl;
     match_image = imgDeque.at(index);
 
     //提取要融合的两帧后将他们从buffer中删除
