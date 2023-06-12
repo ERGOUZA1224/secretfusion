@@ -16,19 +16,33 @@ using namespace std;
 
 #define BUFFER_MAX_VALUE 100
 #define DETECT_THRESH 0.8
-#define IOU_THRESH 0.8
+#define IOU_THRESH 0.5
 
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_fused_parking;
 std::deque<parking_interface::msg::Parking::SharedPtr> radDeque;
 std::deque<parking_interface::msg::Parking::SharedPtr> imgDeque;
 parking_interface::msg::Parking::SharedPtr match_radar;
 parking_interface::msg::Parking::SharedPtr match_image;
-
+int count_ = 1;
 
 /*********************************/
 /***********计算IOU部分***********/
 /*********************************/
-#define maxn 51
+typedef struct {
+    float x_min;
+    float y_min;
+    float x_max;
+    float y_max;
+} box;
+
+float box_iou(const box& box1, const box& box2) {
+    float w = std::max(std::min(box1.x_max, box2.x_max) - std::max(box1.x_min, box2.x_min), 0.f);
+    float h = std::max(std::min(box1.y_max, box2.y_max) - std::max(box1.y_min, box2.y_min), 0.f);
+    float iou = w * h / ((box1.x_max - box1.x_min) * (box1.y_max - box1.y_min)  +
+                                         (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) - w * h);
+    return iou;
+}
+/*#define maxn 51
 const float eps=1E-6;
 
 int sig(float d){
@@ -41,9 +55,11 @@ struct Point{
     bool operator == (const Point&p)const{
         return sig(x - p.x) == 0 && sig(y - p.y) == 0;
     }
-};
+};*/
 
-float cross(Point o, Point a, Point b){  //叉积
+
+/*calculte iou of polygons*/
+/*float cross(Point o, Point a, Point b){  //叉积
     return (a.x-o.x)*(b.y-o.y)-(b.x-o.x)*(a.y-o.y);
 }
 
@@ -140,12 +156,12 @@ float iou_poly(vector<float> p, vector<float> q) {
 //    cout << "union_area:" << union_area << endl;
 //    cout << "iou:" << iou << endl;
     return iou;
-}
+}*/
 
 float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interface::msg::Parkinglst img_box){
     //rad_box、img_box转换为多边形
-    vector<float>box1, box2;
-    float coord_min1 = min(rad_box.x1, rad_box.y1);
+    //vector<float>box1, box2;
+    /*float coord_min1 = min(rad_box.x1, rad_box.y1);
     float coord_min2 = min(rad_box.x2, rad_box.y2);
     float coord_min3 = min(rad_box.x3, rad_box.y3);
     float coord_min4 = min(rad_box.x4, rad_box.y4);
@@ -166,26 +182,23 @@ float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interfac
     box1.push_back(rad_box.x3 + coord_min);
     box1.push_back(rad_box.y3 + coord_min);
     box1.push_back(rad_box.x4 + coord_min);
-    box1.push_back(rad_box.y4 + coord_min);
-    /*box1.push_back(Point(rad_box.x1, rad_box.y1));
-    box1.push_back(Point(rad_box.x2, rad_box.y2));
-    box1.push_back(Point(rad_box.x3, rad_box.y3));
-    box1.push_back(Point(rad_box.x4, rad_box.y4));*/
-    box2.push_back(img_box.x1 + coord_min);
+    box1.push_back(rad_box.y4 + coord_min);*/
+   
+    /*box2.push_back(img_box.x1 + coord_min);
     box2.push_back(img_box.y1 + coord_min);
     box2.push_back(img_box.x2 + coord_min);
     box2.push_back(img_box.y2 + coord_min);
     box2.push_back(img_box.x3 + coord_min);
     box2.push_back(img_box.y3 + coord_min);
     box2.push_back(img_box.x4 + coord_min);
-    box2.push_back(img_box.y4 + coord_min);
-    /*box2.push_back(Point(img_box.x1, img_box.y1));
-    box2.push_back(Point(img_box.x2, img_box.y2));
-    box2.push_back(Point(img_box.x3, img_box.y3));
-    box2.push_back(Point(img_box.x4, img_box.y4));*/
-
+    box2.push_back(img_box.y4 + coord_min);*/
+    
+    box box1;
+    box box2;
+    box1 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
+    box2 = {img_box.x1, img_box.y1, img_box.x4, img_box.y4};
     //计算iou
-    float iou = iou_poly(box1, box2);
+    float iou = box_iou(box1, box2);
     return iou;
 }
 
@@ -194,7 +207,8 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse");
     parking_interface::msg::Parking fused_frame;
     //以主传感器timestamp为准
-    fused_frame.header = rad->header;
+    fused_frame.header.stamp= rad->header.stamp;
+    fused_frame.header.frame_id = to_string(count_++);
     vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
     vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
     vector<parking_interface::msg::Parkinglst> lst_res;
@@ -211,14 +225,14 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
             parking_interface::msg::Parkinglst rad_box = lst1[i];
             parking_interface::msg::Parkinglst img_box = lst2[j];
             // 1. img_box在rad_box内
-            if(img_box.x1 >= rad_box.x1 && img_box.y1 <= rad_box.y1
-            && img_box.x4 <= rad_box.x4 && img_box.y4 >= rad_box.y4){
+            if(img_box.x1 >= rad_box.x1 && img_box.y1 >= rad_box.y1
+            && img_box.x4 <= rad_box.x4 && img_box.y4 <= rad_box.y4){
                 clog<<"img_box confidence:" <<img_box.confidence<<endl;
                 // 1.1 confidence >= 0.8
                 if(img_box.confidence >= DETECT_THRESH){
                     lst_res.push_back(img_box);
-                    clog<<"img_box"<<img_box.x1<<img_box.y1<<img_box.x2<<img_box.y2<<endl;
-                    clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
+                    //clog<<"img_box"<<img_box.x1<<img_box.y1<<img_box.x2<<img_box.y2<<endl;
+                    //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
 
                 }
                  // 1.2 confidence <= 0.8
@@ -246,7 +260,9 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
     fused_frame.parking= lst_res;
     pub_fused_parking->publish(fused_frame);
-    clog<<"fused frame publishing..."<<endl;
+    //clog<<"fused frame data: "<<fused_frame.header.stamp;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
+    //clog<<"fused frame publishing..."<<endl;
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), std::str(fused_frame.header.stamp));
 }
 
@@ -268,7 +284,7 @@ void GetLatestFrames()
         
         if(dif == 0){
             index = i;
-           RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "find matched image");
+          // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "find matched image");
           match_image = imgDeque.at(index);
             //clog<<"match_image x1:"<<match_image->parking.at(0).x1<<endl;
             //radDeque.pop_back();
