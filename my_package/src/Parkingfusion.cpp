@@ -16,7 +16,7 @@ using namespace std;
 
 #define BUFFER_MAX_VALUE 100
 #define DETECT_THRESH 0.8
-#define IOU_THRESH 0.5
+#define IOU_THRESH 0.45
 
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_fused_parking;
 std::deque<parking_interface::msg::Parking::SharedPtr> radDeque;
@@ -258,7 +258,7 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
         }
     }
     //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
-    fused_frame.parking= lst_res;
+    fused_frame.parking = lst_res;
     pub_fused_parking->publish(fused_frame);
     //clog<<"fused frame data: "<<fused_frame.header.stamp;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
