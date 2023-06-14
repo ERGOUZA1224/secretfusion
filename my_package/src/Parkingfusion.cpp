@@ -275,7 +275,7 @@ void GetLatestFrames()
     long timestamp = match_radar->header.stamp.sec * (10 ^9) + match_radar -> header.stamp.nanosec;
     clog<<"timestamp"<<timestamp<<endl;
     int index = 0;
-    int MIN_DIF =66666;
+    long MIN_DIF = 6666666666666;
     long dif;
     for(int i = 0; i < imgDeque.size(); i++){
         clog<<"begin find image frame to match"<<endl;
