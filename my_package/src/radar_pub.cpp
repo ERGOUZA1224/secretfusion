@@ -22,7 +22,7 @@ class MinimalPublisher : public rclcpp::Node
     {
       publisher_ = this->create_publisher<parking_interface::msg::Parking>("radar_parking", 10);
       timer_ = this->create_wall_timer(
-      500ms, std::bind(&MinimalPublisher::timer_callback, this));
+      20ms, std::bind(&MinimalPublisher::timer_callback, this));
     }
 
   private:
@@ -31,28 +31,39 @@ class MinimalPublisher : public rclcpp::Node
       parking_interface::msg::Parking message;
       message.header.stamp = this->get_clock()->now();
       parking_interface::msg::Parkinglst lst1;
-      N = rand() % 10 + 1;
+      N = 0;
       lst1.confidence = 1;
-      lst1.x1 = 188 + N;
-      lst1.y1 = 14 + N;
-      lst1.x2 = 268 + N;
-      lst1.y2 = 14 + N;
-      lst1.x3 = 188 + N;
-      lst1.y3 = 284 + N;
-      lst1.x4 = 268 + N;
-      lst1.y4 = 284 + N; 
+      lst1.x1 = 214 ;
+      lst1.y1 = 53 + N;
+      lst1.x2 = 290 ;
+      lst1.y2 = 53 + N;
+      lst1.x3 = 214 ;
+      lst1.y3 = 251 + N;
+      lst1.x4 = 290 ;
+      lst1.y4 = 251 + N; 
       message.parking.push_back(lst1);
       parking_interface::msg::Parkinglst lst2;
       lst2.confidence = 1;
-      lst2.x1 = 1 + N;
-      lst2.y1 = 1 + N;
-      lst2.x2 = 99 + N;
-      lst2.y2 = 1 + N;
-      lst2.x3 = 1 + N;
-      lst2.y3 = 291 + N;
-      lst2.x4 = 99 + N;
-      lst2.y4 = 291 + N; 
+      lst2.x1 = 0;
+      lst2.y1 = 53 + N;
+      lst2.x2 = 150 ;
+      lst2.y2 = 53 + N;
+      lst2.x3 = 0 ;
+      lst2.y3 = 250 + N;
+      lst2.x4 = 150 ;
+      lst2.y4 = 250 + N; 
       message.parking.push_back(lst2);
+      parking_interface::msg::Parkinglst lst3;
+      lst3.confidence = 1;
+      lst3.x1 = 290;
+      lst3.y1 = 167 + N;
+      lst3.x2 = 358 ;
+      lst3.y2 = 167 + N;
+      lst3.x3 = 290;
+      lst3.y3 = 249 + N;
+      lst3.x4 = 358 ;
+      lst3.y4 = 249 + N;
+      message.parking.push_back(lst3);
       RCLCPP_INFO(this->get_logger(), "radar data publishing...");
       publisher_->publish(message);
     }

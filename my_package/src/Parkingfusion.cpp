@@ -11,7 +11,8 @@
 #include <functional>
 #include "parking_interface/msg/parking.hpp"
 #include "parking_interface/msg/parkinglst.hpp"
-
+#include <chrono>   //计算时间
+using namespace std::chrono;
 using namespace std;
 
 #define BUFFER_MAX_VALUE 100
@@ -310,7 +311,7 @@ void GetLatestFrames()
 
 void radar_callback(const parking_interface::msg::Parking::SharedPtr rad_msg)
 {
-    
+    auto starttime = system_clock::now();
     if(radDeque.size() < BUFFER_MAX_VALUE){
         radDeque.push_back(rad_msg);
     }
@@ -322,6 +323,8 @@ void radar_callback(const parking_interface::msg::Parking::SharedPtr rad_msg)
     {
         GetLatestFrames();
         publish_fused_parking(match_image, match_radar);
+        duration<double> diff = system_clock::now()- starttime;
+        cout << "所耗时间为：" << diff.count() << "s" << endl;
     }
     
 }

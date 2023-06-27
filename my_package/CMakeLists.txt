@@ -22,6 +22,7 @@ find_package(parking_interface REQUIRED)
 find_package(std_msgs REQUIRED)
 #find_package(geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -32,7 +33,7 @@ ament_target_dependencies(radar_pub std_msgs rclcpp parking_interface)
 add_executable (image_pub src/image_pub.cpp)
 ament_target_dependencies(image_pub std_msgs rclcpp parking_interface)
 add_executable (vision_pub src/vision_pub.cpp)
-ament_target_dependencies(vision_pub std_msgs geometry_msgs rclcpp parking_interface)
+ament_target_dependencies(vision_pub std_msgs geometry_msgs visualization_msgs rclcpp parking_interface)
 add_executable(my_node src/my_node.cpp)
 target_include_directories(my_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
