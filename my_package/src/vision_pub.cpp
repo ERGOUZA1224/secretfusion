@@ -15,20 +15,22 @@ using namespace std;
 using namespace std::chrono_literals;
 
 
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization1;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization2;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization3;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization4;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization5;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization6;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization7;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_visualization8;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused1;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused2;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img1;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img2;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img3;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad1;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad2;
+rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad3;
 rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img4;
 rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img5;
 rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused3;
 rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_text1;
 rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_text2;
 rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_text3;
+
+//融合数据可视化
 void vision_callback1(const parking_interface::msg::Parking::SharedPtr fused_msg){
     for(int i = 0; i < fused_msg->parking.size(); i++){
         
@@ -65,10 +67,10 @@ void vision_callback1(const parking_interface::msg::Parking::SharedPtr fused_msg
         
         //polygon_lst.polygonlst.push_back(vision_msg);
         if(i == 0){
-            pub_visualization1 -> publish(vision_msg);
+            pub_fused1 -> publish(vision_msg);
         }
         else if(i == 1){
-            pub_visualization2 -> publish(vision_msg);
+            pub_fused2 -> publish(vision_msg);
         }
         else{
             pub_fused3 -> publish(vision_msg);
@@ -139,6 +141,7 @@ void vision_callback1(const parking_interface::msg::Parking::SharedPtr fused_msg
 
 }
 
+//环视数据可视化
 void vision_callback2(const parking_interface::msg::Parking::SharedPtr fused_msg){
     for(int i = 0; i < fused_msg->parking.size(); i++){
         
@@ -175,13 +178,13 @@ void vision_callback2(const parking_interface::msg::Parking::SharedPtr fused_msg
         
         //polygon_lst.polygonlst.push_back(vision_msg);
         if(i == 0){
-            pub_visualization3 -> publish(vision_msg);
+            pub_img1 -> publish(vision_msg);
         }
         else if(i == 1){
-            pub_visualization4 -> publish(vision_msg);
+            pub_img2 -> publish(vision_msg);
         }
         else if(i == 2){
-            pub_visualization5 -> publish(vision_msg);
+            pub_img3 -> publish(vision_msg);
         }
         else if(i == 3){
             pub_img4 -> publish(vision_msg);
@@ -192,6 +195,7 @@ void vision_callback2(const parking_interface::msg::Parking::SharedPtr fused_msg
     }
 }
 
+//超声波雷达数据可视化
 void vision_callback3(const parking_interface::msg::Parking::SharedPtr fused_msg){
     for(int i = 0; i < fused_msg->parking.size(); i++){
         
@@ -228,13 +232,13 @@ void vision_callback3(const parking_interface::msg::Parking::SharedPtr fused_msg
         
         //polygon_lst.polygonlst.push_back(vision_msg);
         if(i == 0){
-            pub_visualization6 -> publish(vision_msg);
+            pub_rad1 -> publish(vision_msg);
         }
         else if(i == 1){
-            pub_visualization7 -> publish(vision_msg);
+            pub_rad2 -> publish(vision_msg);
         }
         else{
-            pub_visualization8 -> publish(vision_msg);
+            pub_rad3 -> publish(vision_msg);
         }
     }
 }
@@ -247,14 +251,14 @@ int main(int argc, char **argv)
     auto sub_fused= n->create_subscription<parking_interface::msg::Parking>("fused_parking", 100,  vision_callback1);
     auto sub_img= n->create_subscription<parking_interface::msg::Parking>("image_parking", 100,  vision_callback2);
     auto sub_rad= n->create_subscription<parking_interface::msg::Parking>("radar_parking", 100,  vision_callback3);
-    pub_visualization1 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub1", 100);
-    pub_visualization2 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub2", 100);
-    pub_visualization3 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub3", 100);
-    pub_visualization4 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub4", 100);
-    pub_visualization5 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub5", 100);
-    pub_visualization6 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub6", 100);
-    pub_visualization7 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub7", 100);
-    pub_visualization8 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("vision_pub8", 100);
+    pub_fused1 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("fused_pub1", 100);
+    pub_fused2 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("fused_pub2", 100);
+    pub_img1 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("img_pub1", 100);
+    pub_img2 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("img_pub2", 100);
+    pub_img3 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("img_pub3", 100);
+    pub_rad1 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("rad_pub1", 100);
+    pub_rad2 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("rad_pub2", 100);
+    pub_rad3 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("rad_pub3", 100);
     pub_img4 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("img_pub4", 100);
     pub_img5 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("img_pub5", 100);
     pub_fused3 =  n->create_publisher<geometry_msgs::msg::PolygonStamped>("fused_pub3", 100);

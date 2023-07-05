@@ -17,7 +17,7 @@ using namespace std;
 
 #define BUFFER_MAX_VALUE 100
 #define DETECT_THRESH 0.8
-#define IOU_THRESH 0.45
+#define IOU_THRESH 0.8
 
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_fused_parking;
 std::deque<parking_interface::msg::Parking::SharedPtr> radDeque;
@@ -29,6 +29,8 @@ int count_ = 1;
 /*********************************/
 /***********计算IOU部分***********/
 /*********************************/
+
+//垂直/水平车位
 typedef struct {
     float x_min;
     float y_min;
@@ -43,6 +45,8 @@ float box_iou(const box& box1, const box& box2) {
                                          (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) - w * h);
     return iou;
 }
+
+//倾斜车位
 /*#define maxn 51
 const float eps=1E-6;
 
@@ -207,9 +211,10 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
 {
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse");
     parking_interface::msg::Parking fused_frame;
-    //以主传感器timestamp为准
+    
     fused_frame.header.stamp= rad->header.stamp;
-    fused_frame.header.frame_id = to_string(count_++);
+    fused_frame.header.frame_id = "map";
+
     vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
     vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
     vector<parking_interface::msg::Parkinglst> lst_res;
@@ -242,11 +247,16 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
                     continue;
                 }
             }
-            // 2. img_box与rad_box有部分区域相交或者无区域相交
+            //2. imgbox中有障碍物
+            else if(rad_box.x1 >= img_box.x1 && rad_box.y1 >= img_box.y1
+            && rad_box.x4 <= img_box.x4 && rad_box.y4 <= img_box.y4){
+                continue;
+            }
+            // 3. img_box与rad_box有部分区域相交或者无区域相交
             else{
                 float cur_iou = calculate_iou(rad_box, img_box);
                 clog<<"iou: "<<cur_iou<<endl;
-                // 2.2 IOU >= 0.8 && confidence >= 0.8
+                // 2.2 IOU >= thresh && confidence >= 0.8
                 if(cur_iou >= IOU_THRESH && img_box.confidence >= DETECT_THRESH){
                     lst_res.push_back(img_box);
                 }
@@ -273,7 +283,7 @@ void GetLatestFrames()
     clog<<"time stamp begin!"<<endl;
 
     match_radar = radDeque.back();
-    long timestamp = match_radar->header.stamp.sec * (10 ^9) + match_radar -> header.stamp.nanosec;
+    long timestamp = match_radar->header.stamp.sec * (10 ^ 9) + match_radar -> header.stamp.nanosec;
     clog<<"timestamp"<<timestamp<<endl;
     int index = 0;
     long MIN_DIF = 6666666666666;
@@ -324,7 +334,7 @@ void radar_callback(const parking_interface::msg::Parking::SharedPtr rad_msg)
         GetLatestFrames();
         publish_fused_parking(match_image, match_radar);
         duration<double> diff = system_clock::now()- starttime;
-        cout << "所耗时间为：" << diff.count() << "s" << endl;
+        cout << "consuming time：" << diff.count() << "s" << endl;
     }
     
 }
