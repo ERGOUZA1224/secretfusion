@@ -18,14 +18,15 @@ using std::placeholders::_1;
 const int nn_budget=100;
 const float max_cosine_distance=0.2;
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_tracked;
-void get_detections(DETECTBOX box,float confidence,DETECTIONS& d)
+
+/*void get_detections(DETECTBOX box,float confidence,DETECTIONS& d)
 {
     DETECTION_ROW tmpRow;
     tmpRow.tlwh = box;//DETECTBOX(x, y, w, h);
 
     tmpRow.confidence = confidence;
     d.push_back(tmpRow);
-}
+}*/
 
 parking_interface::msg:Parking test_bytetrack(std::vector<detect_result>& results,BYTETracker& tracker)
 {
