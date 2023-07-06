@@ -1,4 +1,4 @@
-int8 classID
+int8 slotID
 float64 confidence
 float64 x1
 float64 y1

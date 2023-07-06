@@ -7,7 +7,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "parking_interface/msg/parking.hpp"
 #include "parking_interface/msg/parkinglst.hpp"
-#include "parking_interface/msg/polygonlst.hpp"
 #include <geometry_msgs/msg/polygon_stamped.hpp>
 #include <geometry_msgs/msg/point32.hpp>
 #include <visualization_msgs/msg/marker.hpp>
