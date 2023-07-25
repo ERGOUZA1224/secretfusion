@@ -36,48 +36,51 @@ class MinimalPublisher : public rclcpp::Node
       parking_interface::msg::Parkinglst lst3;
       parking_interface::msg::Parkinglst lst4;
       parking_interface::msg::Parkinglst lst5; 
-      //N = rand() % 10 + 1;
-      N = 0;
-      lst1.confidence = 0.85;
-      lst1.x1 = 148;
-      lst1.y1 = 53 + N;
-      lst1.x2 = 216 ;
+      N = rand() % 5 + 1;
+      lst1.confidence = 0.9;
+      lst1.x1 = 0 ;
+      lst1.y1 = 53 + N;      
+      lst1.x2 = 68 ;
       lst1.y2 = 53 + N;
-      lst1.x3 = 148;
-      lst1.y3 = 243 + N;
-      lst1.x4 = 216;
-      lst1.y4 = 243 + N;
+      lst1.x3 = 0 ;
+      lst1.y3 = 244 + N;
+      lst1.x4 = 68 ;
+      lst1.y4 = 244 + N;
       message.parking.push_back(lst1);
-      lst2.confidence = 0.9;
-      lst2.x1 = 0 ;
-      lst2.y1 = 53 + N;
-      lst2.x2 = 68 ;
-      lst2.y2 = 53 + N;
-      lst2.x3 = 0 ;
-      lst2.y3 = 244 + N;
-      lst2.x4 = 68 ;
-      lst2.y4 = 244 + N;
+
+      lst2.confidence = 0.82;
+      lst2.x1 = 75;
+      lst2.y1 = 54 + N;
+      lst2.x2 = 143 ;
+      lst2.y2 = 54 + N;
+      lst2.x3 = 75 ;
+      lst2.y3 = 242 + N;
+      lst2.x4 = 143 ;
+      lst2.y4 = 242+ N;
       message.parking.push_back(lst2);
-      lst3.confidence = 0.86;
-      lst3.x1 = 220 ;
-      lst3.y1 = 55 + N;
-      lst3.x2 = 289 ;
-      lst3.y2 = 55 + N;
-      lst3.x3 = 220 ;
-      lst3.y3 = 240 + N;
-      lst3.x4 = 289 ;
-      lst3.y4 = 240+ N;
+
+      lst3.confidence = 0.85;
+      lst3.x1 = 148;
+      lst3.y1 = 53 + N;
+      lst3.x2 = 216 ;
+      lst3.y2 = 53 + N;
+      lst3.x3 = 148;
+      lst3.y3 = 243 + N;
+      lst3.x4 = 216;
+      lst3.y4 = 243 + N;
       message.parking.push_back(lst3);
-      lst4.confidence = 0.82;
-      lst4.x1 = 75;
-      lst4.y1 = 54 + N;
-      lst4.x2 = 143 ;
-      lst4.y2 = 54 + N;
-      lst4.x3 = 75 ;
-      lst4.y3 = 242 + N;
-      lst4.x4 = 143 ;
-      lst4.y4 = 242+ N;
+
+      lst4.confidence = 0.86;
+      lst4.x1 = 220 ;
+      lst4.y1 = 55 + N;
+      lst4.x2 = 289 ;
+      lst4.y2 = 55 + N;
+      lst4.x3 = 220 ;
+      lst4.y3 = 240 + N;
+      lst4.x4 = 289 ;
+      lst4.y4 = 240+ N;      
       message.parking.push_back(lst4);
+     
       lst5.confidence = 0.88;
       lst5.x1 = 294;
       lst5.y1 = 54 + N;
@@ -90,7 +93,9 @@ class MinimalPublisher : public rclcpp::Node
       message.parking.push_back(lst5);
       RCLCPP_INFO(this->get_logger(), "image data publishing...");
       publisher_->publish(message);
+
     }
+
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr publisher_;
     size_t count_;

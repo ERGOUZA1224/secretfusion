@@ -17,7 +17,7 @@ using namespace std;
 
 #define BUFFER_MAX_VALUE 100
 #define DETECT_THRESH 0.8
-#define IOU_THRESH 0.8
+#define IOU_THRESH 0.7
 
 rclcpp::Publisher<parking_interface::msg::Parking>::SharedPtr pub_fused_parking;
 std::deque<parking_interface::msg::Parking::SharedPtr> radDeque;
@@ -45,6 +45,27 @@ float box_iou(const box& box1, const box& box2) {
                                          (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) - w * h);
     return iou;
 }
+
+
+//用于计算相交部分占img_box的IOU
+float calculate_imgiou(parking_interface::msg::Parkinglst rad_box, parking_interface::msg::Parkinglst img_box){
+    box box1;
+    box box2;
+    box1 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
+    box2 = {img_box.x1, img_box.y1, img_box.x4, img_box.y4};
+    float w = std::max(std::min(box1.x_max, box2.x_max) - std::max(box1.x_min, box2.x_min), 0.f);
+    float h = std::max(std::min(box1.y_max, box2.y_max) - std::max(box1.y_min, box2.y_min), 0.f);
+    float iou = w * h /  ((box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) );
+    return iou;
+}
+
+float calculate_area(parking_interface::msg::Parkinglst rad_box){
+    box box2;
+    box2 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
+    float s = (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) ;
+    return s;
+}
+
 
 //倾斜车位
 /*#define maxn 51
@@ -192,7 +213,7 @@ float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interfac
     /*box2.push_back(img_box.x1 + coord_min);
     box2.push_back(img_box.y1 + coord_min);
     box2.push_back(img_box.x2 + coord_min);
-    box2.push_back(img_box.y2 + coord_min);
+    box2.push_back(img_box.y2 + coord_min);img
     box2.push_back(img_box.x3 + coord_min);
     box2.push_back(img_box.y3 + coord_min);
     box2.push_back(img_box.x4 + coord_min);
@@ -207,9 +228,9 @@ float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interfac
     return iou;
 }
 
+
 void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parking_interface::msg::Parking::SharedPtr rad)
 {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse");
     parking_interface::msg::Parking fused_frame;
     
     fused_frame.header.stamp= rad->header.stamp;
@@ -218,50 +239,119 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
     vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
     vector<parking_interface::msg::Parkinglst> lst_res;
-    clog<<"lst1 size"<<lst1.size()<<";lst2 size"<<lst2.size()<<endl;
     if(lst1.size() == 0 || lst2.size() == 0){
-        lst_res = {};
-        clog<<"lst_res is empty"<<endl;
+      clog<<"lst_res is empty"<<endl;
+      //发布空白数据
+      lst_res.clear();
+    }
+    else{
+        for(int i = 0; i < lst1.size(); i++){
+            for(int j = 0; j < lst2.size(); j++){
+                parking_interface::msg::Parkinglst rad_box = lst1[i];
+                parking_interface::msg::Parkinglst img_box = lst2[j];
+                //有相交
+                if(calculate_iou(rad_box,img_box) > 0){
+                    // 1. rad_box > img_box
+                    if(calculate_area(rad_box) >= calculate_area(img_box)){
+                        // 1.1 img_box刚好在rad_box内
+                        if(img_box.x1 >= rad_box.x1 && img_box.y1 >= rad_box.y1
+                        && img_box.x4 <= rad_box.x4 && img_box.y4 <= rad_box.y4){
+                            lst_res.push_back(img_box);
+                        }
+                        // 1.2 相交且IOU大于0.9，无障碍物区域够停车
+                        else if(calculate_imgiou(rad_box, img_box) >= 0.8){
+                            lst_res.push_back(img_box);
+                        }
+                        //1.3 无障碍物区域不够停车
+                        else{
+                           ;
+                        }
+                    }
+                    //2. img_box > rad_box
+                    else{
+                        //2.1 rad_box刚好在img_box内，空白区域够停车
+                        if((rad_box.x1 >= img_box.x1 && rad_box.y1 >= img_box.y1
+                        && rad_box.x4 <= img_box.x4 && rad_box.y4 <= img_box.y4) && (calculate_iou(rad_box, img_box) >= 0.9)){
+                            lst_res.push_back(img_box);
+                        }
+                        // 2.2 rad_box与img_box相交，IOU大于0.85
+                        else if(calculate_imgiou(rad_box, img_box) >= 0.8){
+                            lst_res.push_back(img_box);
+                        }
+                        // 2.3 img_box内无空白区域或空白区域不够停车
+                        else{
+                            ;
+                        }
+                    } 
+                }
+                //无相交
+                else{
+                    ;
+                }
+            }
+        }
+    }
+    fused_frame.parking = lst_res;
+    pub_fused_parking->publish(fused_frame);
+    cout<<"fused_parking num :" << fused_frame.parking.size()<<endl;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
+}
+
+void publish_fused_parking_v1(parking_interface::msg::Parking::SharedPtr img, parking_interface::msg::Parking::SharedPtr rad)
+{
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse");
+    parking_interface::msg::Parking fused_frame;
+    
+    fused_frame.header.stamp= rad->header.stamp;
+    fused_frame.header.frame_id = "map";
+
+    vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
+    vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
+    vector<parking_interface::msg::Parkinglst> lst_res;
+    //clog<<"lst1 size"<<lst1.size()<<";lst2 size"<<lst2.size()<<endl;
+    if(lst1.size() == 0 || lst2.size() == 0){
+   
+      clog<<"lst_res is empty"<<endl;
     }
     else{
     //LIST_RESULT deault_zero = {0,0,0,0,0,0,0,0,0,0};
     for(int i = 0; i < lst1.size(); i++){
         for(int j = 0; j < lst2.size(); j++){
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse,enter loop");
+            //RCLCPP_INFO(rclcpp::get_lo/* gger("rclcpp"), "Begin to fuse,enter loop");
             parking_interface::msg::Parkinglst rad_box = lst1[i];
             parking_interface::msg::Parkinglst img_box = lst2[j];
             // 1. img_box在rad_box内
             if(img_box.x1 >= rad_box.x1 && img_box.y1 >= rad_box.y1
             && img_box.x4 <= rad_box.x4 && img_box.y4 <= rad_box.y4){
-                clog<<"img_box confidence:" <<img_box.confidence<<endl;
+              //  clog<<"img_box confidence:" <<img_box.confidence<<endl;
                 // 1.1 confidence >= 0.8
-                if(img_box.confidence >= DETECT_THRESH){
+                //if(img_box.confidence >= DETECT_THRESH){
                     lst_res.push_back(img_box);
                     //clog<<"img_box"<<img_box.x1<<img_box.y1<<img_box.x2<<img_box.y2<<endl;
                     //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
 
-                }
-                 // 1.2 confidence <= 0.8
-                else{
-                    clog<<"no matched point1"<<endl;
-                    continue;
-                }
+                //}
+                 // 1.2 confidence <= 0.8slot id:1
+                // else{
+                //    // clog<<"no matched point1"<<endl;
+                //     continue;
+                // }
             }
             //2. imgbox中有障碍物
-            else if(rad_box.x1 >= img_box.x1 && rad_box.y1 >= img_box.y1
-            && rad_box.x4 <= img_box.x4 && rad_box.y4 <= img_box.y4){
-                continue;
+           else if((rad_box.x1 >= img_box.x1 && rad_box.y1 >= img_box.y1
+            && rad_box.x4 <= img_box.x4 && rad_box.y4 <= img_box.y4) && (calculate_iou(rad_box, img_box) >= 0.9)){
+                 lst_res.push_back(img_box);
             }
             // 3. img_box与rad_box有部分区域相交或者无区域相交
             else{
                 float cur_iou = calculate_iou(rad_box, img_box);
                 clog<<"iou: "<<cur_iou<<endl;
                 // 2.2 IOU >= thresh && confidence >= 0.8
-                if(cur_iou >= IOU_THRESH && img_box.confidence >= DETECT_THRESH){
+                if(cur_iou >= IOU_THRESH){
                     lst_res.push_back(img_box);
                 }
                 else{
-                    clog<<"no matched point2"<<endl;
+                   // clog<<"no matched point2"<<endl;
                     continue;
                 }
             }
@@ -271,6 +361,7 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     //clog<<"lst_res"<<lst_res.at(0).x1<<lst_res.at(0).y1<<lst_res.at(0).x2<<lst_res.at(0).y2<<endl;
     fused_frame.parking = lst_res;
     pub_fused_parking->publish(fused_frame);
+    cout<<"fused_parking num :" << fused_frame.parking.size()<<endl;
     //clog<<"fused frame data: "<<fused_frame.header.stamp;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
     //clog<<"fused frame publishing..."<<endl;
@@ -280,16 +371,16 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
 
 void GetLatestFrames()
 {
-    clog<<"time stamp begin!"<<endl;
+    //clog<<"time stamp begin!"<<endl;
 
     match_radar = radDeque.back();
     long timestamp = match_radar->header.stamp.sec * (10 ^ 9) + match_radar -> header.stamp.nanosec;
-    clog<<"timestamp"<<timestamp<<endl;
+    //clog<<"timestamp"<<timestamp<<endl;
     int index = 0;
     long MIN_DIF = 6666666666666;
     long dif;
     for(int i = 0; i < imgDeque.size(); i++){
-        clog<<"begin find image frame to match"<<endl;
+        //clog<<"begin find image frame to match"<<endl;
         long imgstamp = imgDeque.at(i)->header.stamp.sec * (10 ^ 9) + imgDeque.at(i)->header.stamp.nanosec; 
         dif = abs(timestamp - imgstamp);
         
@@ -310,8 +401,8 @@ void GetLatestFrames()
         }
     }
     
-    clog<<"find it!!!"<<endl;
-    clog<<"dif = "<<dif/(10^9)<<endl;
+    //clog<<"find it!!!"<<endl;
+    //clog<<"dif = "<<dif/(10^9)<<endl;
     match_image = imgDeque.at(index);
 
     //提取要融合的两帧后将他们从buffer中删除

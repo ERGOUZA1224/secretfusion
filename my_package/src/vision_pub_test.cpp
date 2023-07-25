@@ -16,15 +16,7 @@ using namespace std::chrono_literals;
 
 rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused1;
 rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused2;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_fused3;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img1;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img2;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img3;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad1;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad2;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_rad3;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img4;
-rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr pub_img5;
+
 
 rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_text1;
 rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_text2;
