@@ -11,6 +11,7 @@
 #include <functional>
 #include "parking_interface/msg/parking.hpp"
 #include "parking_interface/msg/parkinglist.hpp"
+#include "parking_interface/msg/point2_d.hpp"
 #include <chrono>   //计算时间
 #include <memory>
 #include <iomanip> // to format image names using setw() and setfill()
@@ -533,7 +534,7 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 
 // 		}
 //        result_boxes.publish(box);
-	vector<parking_interface::msg::Parkinglst> lst1;
+	vector<parking_interface::msg::Parkinglist> lst1;
 	
 	for (auto it = trackers.begin(); it != trackers.end();)
 		{
@@ -554,18 +555,23 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 				// cv::waitKey(1);
 				// }
 				frameTrackingResult.push_back(res);
-				parking_interface::msg::Parkinglst reslst;
+				parking_interface::msg::Parkinglist reslst;
 				//cout<<"1 id:"<< res.id<<endl;
 				reslst.id = res.id;
+                parking_interface::msg::Point2D pt1,pt2,pt3,pt4;
 				//reslst.confidence = 1;
-				reslst.pointlist[0].x = res.box.x;
-				reslst.pointlist[0].y = res.box.y;
-				reslst.pointlist[1].x = res.box.x;
-				reslst.pointlist[1].y = res.box.y + res.box.height;
-				reslst.pointlist[2].x = res.box.x + res.box.width;
-				reslst.pointlist[2].y = res.box.y + res.box.height;
-                reslst.pointlist[3].x = res.box.x + res.box.width;
-				reslst.pointlist[3].y = res.box.y;
+				pt1.x = res.box.x;
+				pt1.y = res.box.y;
+				pt2.x = res.box.x;
+				pt2.y = res.box.y + res.box.height;
+				pt3.x = res.box.x + res.box.width;
+				pt3.y = res.box.y + res.box.height;
+                pt4.x = res.box.x + res.box.width;
+				pt4.y = res.box.y;
+                reslst.pointlist.push_back(pt1);
+                reslst.pointlist.push_back(pt2);
+                reslst.pointlist.push_back(pt3);
+                reslst.pointlist.push_back(pt4);
 				lst1.push_back(reslst);
 				it++;
 				
@@ -631,17 +637,17 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 		// 	cout<<"id: "<<lst1[i].slotid<<endl;
 		// }
 		// tracked_parking.parking.clear();
-		tracked_parking.parking = lst1;
+		tracked_parking.parkinglist = lst1;
 		cycle_time = (double)(getTickCount() - start_time);
         double fps = (1.0/cycle_time)*getTickFrequency();
 		pub_fused_parking -> publish(tracked_parking);
 
 		cout<<"tracker size: "<<trackers.size()<<endl;
-		for(int i = 0; i < tracked_parking.parking.size(); i++){
+		for(int i = 0; i < tracked_parking.parkinglist.size(); i++){
 			
-			cout<<"slot id:"<<(int)tracked_parking.parking[i].id<<endl;
+			cout<<"slot id:"<<(int)tracked_parking.parkinglist[i].id<<endl;
 		}
-		tracked_parking.parking.clear();
+		tracked_parking.parkinglist.clear();
 		//cout<<"tracked_parking id: "<<tracked_parking.parking.back().slotid<<endl;
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "current : %.1f", fps);
 
@@ -711,14 +717,14 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
             }
         }
     }
-    fused_frame.parking = lst_res;
+    fused_frame.parkinglist = lst_res;
     //pub_fused_parking->publish(fused_frame);
     topic_callback(fused_frame);
     cout<<"fused_parking num :" << fused_frame.parkinglist.size()<<endl;
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
 }
-
+/*
 void publish_fused_parking_v1(parking_interface::msg::Parking::SharedPtr img, parking_interface::msg::Parking::SharedPtr rad)
 {
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Begin to fuse");
@@ -789,7 +795,7 @@ void publish_fused_parking_v1(parking_interface::msg::Parking::SharedPtr img, pa
     //clog<<"fused frame publishing..."<<endl;
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), std::str(fused_frame.header.stamp));
 }
-
+*/
 
 void GetLatestFrames()
 {

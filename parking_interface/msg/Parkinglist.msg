@@ -1,3 +1,3 @@
 int8 id
-geometry_msgs/Point[] pointlist
+Point2D[] pointlist
 #逆时针

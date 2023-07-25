@@ -6,8 +6,10 @@
 #include <std_msgs/msg/header.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include <parking_interface/msg/parking.hpp>
-#include <parking_interface/msg/parkinglst.hpp>
+#include <parking_interface/msg/parkinglist.hpp>
+#include <parking_interface/msg/point2_d.hpp>
 using namespace std;
 using namespace std::chrono_literals;
 int N;
@@ -30,43 +32,58 @@ class MinimalPublisher : public rclcpp::Node
     {
       parking_interface::msg::Parking message;
       message.header.stamp = this->get_clock()->now();
-      parking_interface::msg::Parkinglst lst1;
+      parking_interface::msg::Parkinglist lst1;
       N = rand() % 5+ 1;
       //N = 0;
-      parking_interface::msg::Parkinglst lst2;
-      lst1.confidence = 1;
-      lst1.x1 = 0;
-      lst1.y1 = 53 + N;
-      lst1.x2 = 150 ;
-      lst1.y2 = 53 + N;
-      lst1.x3 = 0 ;
-      lst1.y3 = 250 + N;
-      lst1.x4 = 150 ;
-      lst1.y4 = 250 + N; 
-      message.parking.push_back(lst1);
+      parking_interface::msg::Parkinglist lst2;
+      parking_interface::msg::Parkinglist lst3;
+      lst1.id = -1;
+      parking_interface::msg::Point2D pt1;
+      pt1.x = 0;
+      pt1.y = 53 + N;
+      lst1.pointlist.push_back(pt1);
+      parking_interface::msg::Point2D pt2;
+      pt2.x = 0;
+      pt2.y = 244 + N;
+      lst1.pointlist.push_back(pt2);
+      parking_interface::msg::Point2D pt3;
+      pt3.x = 68;
+      pt3.y = 244 + N;
+      lst1.pointlist.push_back(pt3);
+      parking_interface::msg::Point2D pt4;
+      pt4.x = 68;
+      pt4.y = 253 + N;
+      lst1.pointlist.push_back(pt4);
+      message.parkinglist.push_back(lst1);
+      // lst1.pointlist[0].x = 0 ;
+      // lst1.pointlist[0].y = 53 + N;      
+      // lst1.pointlist[3].x = 150 ;
+      // lst1.pointlist[3].y = 53 + N;
+      // lst1.pointlist[1].x = 0 ;
+      // lst1.pointlist[1].y = 250 + N;
+      // lst1.pointlist[2].x = 150 ;
+      // lst1.pointlist[2].x = 250 + N;
+      // message.parkinglist.push_back(lst1);
 
-      lst2.confidence = 1;
-      lst2.x1 = 214 ;
-      lst2.y1 = 53 + N;
-      lst2.x2 = 290 ;
-      lst2.y2 = 53 + N;
-      lst2.x3 = 214 ;
-      lst2.y3 = 251 + N;
-      lst2.x4 = 290 ;
-      lst2.y4 = 251 + N; 
-      message.parking.push_back(lst2);
-      
-      parking_interface::msg::Parkinglst lst3;
-      lst3.confidence = 1;
-      lst3.x1 = 290;
-      lst3.y1 = 167 + N;
-      lst3.x2 = 358 ;
-      lst3.y2 = 167 + N;
-      lst3.x3 = 290;
-      lst3.y3 = 249 + N;
-      lst3.x4 = 358 ;
-      lst3.y4 = 249 + N;
-      message.parking.push_back(lst3);
+      // lst2.pointlist[0].x = 214 ;
+      // lst2.pointlist[0].y = 53 + N;      
+      // lst2.pointlist[3].x = 290 ;
+      // lst2.pointlist[3].y = 53 + N;
+      // lst2.pointlist[1].x = 214 ;
+      // lst2.pointlist[1].y = 251 + N;
+      // lst2.pointlist[2].x = 290 ;
+      // lst2.pointlist[2].x = 251 + N;
+      // message.parkinglist.push_back(lst2);
+
+      // lst3.pointlist[0].x = 290 ;
+      // lst3.pointlist[0].y = 167 + N;      
+      // lst3.pointlist[3].x = 358 ;
+      // lst3.pointlist[3].y = 167 + N;
+      // lst3.pointlist[1].x = 290 ;
+      // lst3.pointlist[1].y = 249 + N;
+      // lst3.pointlist[2].x = 358 ;
+      // lst3.pointlist[2].x = 249 + N;
+      // message.parkinglist.push_back(lst3);
       RCLCPP_INFO(this->get_logger(), "radar data publishing...");
       publisher_->publish(message);
     }

@@ -23,35 +23,66 @@ find_package(std_msgs REQUIRED)
 #find_package(geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
+include_directories(include/my_package)
+
+
+
+
+#add_executable (Hungarian src/Hungarian.cpp)
+#add_executable (KalmanTracker src/KalmanTracker.cpp)
+
+# add_library(${PROJECT_NAME} SHARED
+#   src/KalmanTracker.cpp
+#   src/Hungarian.cpp
+# )
+
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
-add_executable (Parkingfusion src/Parkingfusion.cpp)
-ament_target_dependencies(Parkingfusion std_msgs rclcpp parking_interface)
+
+# add_executable (Parkingfusion src/Parkingfusion.cpp)
+# ament_target_dependencies(Parkingfusion std_msgs rclcpp parking_interface)
 add_executable (radar_pub src/radar_pub.cpp)
-ament_target_dependencies(radar_pub std_msgs rclcpp parking_interface)
+ament_target_dependencies(radar_pub std_msgs rclcpp parking_interface geometry_msgs)
 add_executable (image_pub src/image_pub.cpp)
-ament_target_dependencies(image_pub std_msgs rclcpp parking_interface)
-add_executable (vision_pub src/vision_pub.cpp)
-ament_target_dependencies(vision_pub std_msgs geometry_msgs visualization_msgs rclcpp parking_interface)
-add_executable(my_node src/my_node.cpp)
-target_include_directories(my_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(image_pub std_msgs rclcpp parking_interface geometry_msgs)
+# add_executable (vision_pub src/vision_pub.cpp)
+# ament_target_dependencies(vision_pub std_msgs geometry_msgs visualization_msgs rclcpp parking_interface)
+add_executable (test_tracking src/test_tracking.cpp src/Hungarian.cpp src/KalmanTracker.cpp)
+ament_target_dependencies(test_tracking std_msgs geometry_msgs visualization_msgs rclcpp parking_interface OpenCV)
+# add_executable(my_node src/my_node.cpp)
 
-target_include_directories(vision_pub PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+# add_executable (tracking_pub src/tracking_pub.cpp src/Hungarian.cpp src/KalmanTracker.cpp)
+# ament_target_dependencies(tracking_pub std_msgs rclcpp parking_interface OpenCV)
 
-install(TARGETS my_node
-  DESTINATION lib/${PROJECT_NAME})
+
+
+
+# target_link_libraries(tracking_pub Hungarian KalmanTracker)
+# target_include_directories(my_node PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+
+# target_include_directories(vision_pub PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+
+# install(TARGETS my_node
+#   DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS
-  Parkingfusion
+  # Parkingfusion
   radar_pub
   image_pub
-  vision_pub
+  # vision_pub
+  # tracking_pub
+  test_tracking
   DESTINATION lib/${PROJECT_NAME})
+
+# target_link_libraries(${PROJECT_NAME}
+# ${OpenCV_LIBS}
+# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
