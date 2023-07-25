@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <functional>
 #include "parking_interface/msg/parking.hpp"
-#include "parking_interface/msg/parkinglst.hpp"
+#include "parking_interface/msg/parkinglist.hpp"
 #include <chrono>   //计算时间
 #include <memory>
 #include <iomanip> // to format image names using setw() and setfill()
@@ -94,20 +94,20 @@ float box_iou(const box& box1, const box& box2) {
 
 
 //用于计算相交部分占img_box的IOU
-float calculate_imgiou(parking_interface::msg::Parkinglst rad_box, parking_interface::msg::Parkinglst img_box){
+float calculate_imgiou(parking_interface::msg::Parkinglist rad_box, parking_interface::msg::Parkinglist img_box){
     box box1;
     box box2;
-    box1 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
-    box2 = {img_box.x1, img_box.y1, img_box.x4, img_box.y4};
+    box1 = {rad_box.pointlist[0].x, rad_box.pointlist[0].y, rad_box.pointlist[2].x, rad_box.pointlist[2].y};
+    box2 = {img_box.pointlist[0].x, img_box.pointlist[0].y, img_box.pointlist[2].x, img_box.pointlist[2].y};
     float w = std::max(std::min(box1.x_max, box2.x_max) - std::max(box1.x_min, box2.x_min), 0.f);
     float h = std::max(std::min(box1.y_max, box2.y_max) - std::max(box1.y_min, box2.y_min), 0.f);
     float iou = w * h /  ((box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) );
     return iou;
 }
 
-float calculate_area(parking_interface::msg::Parkinglst rad_box){
+float calculate_area(parking_interface::msg::Parkinglist rad_box){
     box box2;
-    box2 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
+    box2 = {rad_box.pointlist[0].x, rad_box.pointlist[0].y, rad_box.pointlist[2].x, rad_box.pointlist[2].x};
     float s = (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min) ;
     return s;
 }
@@ -230,7 +230,7 @@ float iou_poly(vector<float> p, vector<float> q) {
     return iou;
 }*/
 
-float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interface::msg::Parkinglst img_box){
+float calculate_iou(parking_interface::msg::Parkinglist rad_box, parking_interface::msg::Parkinglist img_box){
     //rad_box、img_box转换为多边形
     //vector<float>box1, box2;
     /*float coord_min1 = min(rad_box.x1, rad_box.y1);
@@ -267,8 +267,8 @@ float calculate_iou(parking_interface::msg::Parkinglst rad_box, parking_interfac
     
     box box1;
     box box2;
-    box1 = {rad_box.x1, rad_box.y1, rad_box.x4, rad_box.y4};
-    box2 = {img_box.x1, img_box.y1, img_box.x4, img_box.y4};
+    box1 = {rad_box.pointlist[0].x, rad_box.pointlist[0].y, rad_box.pointlist[2].x, rad_box.pointlist[2].y};
+    box2 = {img_box.pointlist[0].x, img_box.pointlist[0].y, img_box.pointlist[2].x, img_box.pointlist[2].y};
     //计算iou
     float iou = box_iou(box1, box2);
     return iou;
@@ -283,14 +283,15 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
     //darknet_ros_msgs::BoundingBoxes bboxes;
    // bboxes.bounding_boxes = msg->bounding_boxes;
    parking_interface::msg::Parking pparking;
-   pparking.parking = fused_msg. parking;
+   pparking.parkinglist = fused_msg. parkinglist;
     // 1. read bounding boxes from object detector, here from YOLO v3 ROS version.
-    for (int i = 0; i < int(pparking.parking.size()) ; i++)
+    for (int i = 0; i < int(pparking.parkinglist.size()) ; i++)
     {
         TrackingBox tb;
         tb.frame = frame_i;
-        tb.id = pparking.parking[i].slotid;
-        tb.box = Rect_<float>(Point_<float>(pparking.parking[i].x1, pparking.parking[i].y1), Point_<float>(pparking.parking[i].x4, pparking.parking[i].y4));
+        tb.id = pparking.parkinglist[i].id;
+        tb.box = Rect_<float>(Point_<float>(pparking.parkinglist[i].pointlist[0].x, pparking.parkinglist[i].pointlist[0].y), 
+        Point_<float>(pparking.parkinglist[i].pointlist[2].x, pparking.parkinglist[i].pointlist[2].y));
 		detData.push_back(tb);
     }
 	frame_i++;
@@ -319,7 +320,7 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 	set<int> matchedItems;
 	vector<cv::Point> matchedPairs;
 	vector<TrackingBox> frameTrackingResult;
-    vector<parking_interface::msg::Parkinglst> parkinglst;
+    vector<parking_interface::msg::Parkinglist> parkinglst;
 	unsigned int trkNum = 0;
 	unsigned int detNum = 0;
 
@@ -555,16 +556,16 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 				frameTrackingResult.push_back(res);
 				parking_interface::msg::Parkinglst reslst;
 				//cout<<"1 id:"<< res.id<<endl;
-				reslst.slotid = res.id;
-				reslst.confidence = 1;
-				reslst.x1 = res.box.x;
-				reslst.y1 = res.box.y;
-				reslst.x2 = res.box.x + res.box.height;
-				reslst.y2 = res.box.y;
-				reslst.x3 = res.box.x;
-				reslst.y3 = res.box.y + res.box.width;
-				reslst.x4 = res.box.x + res.box.height;
-				reslst.y4 = res.box.y + res.box.width;
+				reslst.id = res.id;
+				//reslst.confidence = 1;
+				reslst.pointlist[0].x = res.box.x;
+				reslst.pointlist[0].y = res.box.y;
+				reslst.pointlist[1].x = res.box.x;
+				reslst.pointlist[1].y = res.box.y + res.box.height;
+				reslst.pointlist[2].x = res.box.x + res.box.width;
+				reslst.pointlist[2].y = res.box.y + res.box.height;
+                reslst.pointlist[3].x = res.box.x + res.box.width;
+				reslst.pointlist[3].y = res.box.y;
 				lst1.push_back(reslst);
 				it++;
 				
@@ -638,8 +639,7 @@ void topic_callback(const parking_interface::msg::Parking fused_msg)
 		cout<<"tracker size: "<<trackers.size()<<endl;
 		for(int i = 0; i < tracked_parking.parking.size(); i++){
 			
-			cout<<"slot id:"<<(int)tracked_parking.parking[i].slotid<<endl;
-			cout<<"coord:"<<tracked_parking.parking[i].x1<<" "<<tracked_parking.parking[i].y1<<endl;
+			cout<<"slot id:"<<(int)tracked_parking.parking[i].id<<endl;
 		}
 		tracked_parking.parking.clear();
 		//cout<<"tracked_parking id: "<<tracked_parking.parking.back().slotid<<endl;
@@ -655,9 +655,9 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     fused_frame.header.stamp= rad->header.stamp;
     fused_frame.header.frame_id = "map";
 
-    vector<parking_interface::msg::Parkinglst> lst1 = rad->parking;
-    vector<parking_interface::msg::Parkinglst> lst2 = img->parking;
-    vector<parking_interface::msg::Parkinglst> lst_res;
+    vector<parking_interface::msg::Parkinglist> lst1 = rad->parkinglist;
+    vector<parking_interface::msg::Parkinglist> lst2 = img->parkinglist;
+    vector<parking_interface::msg::Parkinglist> lst_res;
     if(lst1.size() == 0 || lst2.size() == 0){
       clog<<"lst_res is empty"<<endl;
       //发布空白数据
@@ -666,15 +666,15 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     else{
         for(int i = 0; i < lst1.size(); i++){
             for(int j = 0; j < lst2.size(); j++){
-                parking_interface::msg::Parkinglst rad_box = lst1[i];
-                parking_interface::msg::Parkinglst img_box = lst2[j];
+                parking_interface::msg::Parkinglist rad_box = lst1[i];
+                parking_interface::msg::Parkinglist img_box = lst2[j];
                 //有相交
                 if(calculate_iou(rad_box,img_box) > 0){
                     // 1. rad_box > img_box
                     if(calculate_area(rad_box) >= calculate_area(img_box)){
                         // 1.1 img_box刚好在rad_box内
-                        if(img_box.x1 >= rad_box.x1 && img_box.y1 >= rad_box.y1
-                        && img_box.x4 <= rad_box.x4 && img_box.y4 <= rad_box.y4){
+                        if(img_box.pointlist[0].x >= rad_box.pointlist[0].x && img_box.pointlist[0].y >= rad_box.pointlist[0].y
+                        && img_box.pointlist[2].x <= rad_box.pointlist[2].x && img_box.pointlist[2].y <= rad_box.pointlist[2].y){
                             lst_res.push_back(img_box);
                         }
                         // 1.2 相交且IOU大于0.9，无障碍物区域够停车
@@ -689,8 +689,9 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
                     //2. img_box > rad_box
                     else{
                         //2.1 rad_box刚好在img_box内，空白区域够停车
-                        if((rad_box.x1 >= img_box.x1 && rad_box.y1 >= img_box.y1
-                        && rad_box.x4 <= img_box.x4 && rad_box.y4 <= img_box.y4) && (calculate_iou(rad_box, img_box) >= 0.9)){
+                        if((rad_box.pointlist[0].x >= img_box.pointlist[0].x && rad_box.pointlist[0].y >= img_box.pointlist[0].y
+                        && rad_box.pointlist[2].x <= img_box.pointlist[2].x && rad_box.pointlist[2].y <= img_box.pointlist[2].y) 
+                        && (calculate_iou(rad_box, img_box) >= 0.9)){
                             lst_res.push_back(img_box);
                         }
                         // 2.2 rad_box与img_box相交，IOU大于0.85
@@ -713,7 +714,7 @@ void publish_fused_parking(parking_interface::msg::Parking::SharedPtr img, parki
     fused_frame.parking = lst_res;
     //pub_fused_parking->publish(fused_frame);
     topic_callback(fused_frame);
-    cout<<"fused_parking num :" << fused_frame.parking.size()<<endl;
+    cout<<"fused_parking num :" << fused_frame.parkinglist.size()<<endl;
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "fused frame publishing...");
 }
