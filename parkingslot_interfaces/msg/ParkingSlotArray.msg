@@ -1,0 +1,3 @@
+std_msgs/Header header
+uint8 count
+CornerDetectionOut[] parking_detection_out_list
