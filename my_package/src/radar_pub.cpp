@@ -13,9 +13,8 @@
 using namespace std;
 using namespace std::chrono_literals;
 int N;
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
 
+// Node for publish ultrasonic radar data.
 class MinimalPublisher : public rclcpp::Node
 {
   public:
@@ -32,58 +31,61 @@ class MinimalPublisher : public rclcpp::Node
     {
       parking_interface::msg::Parking message;
       message.header.stamp = this->get_clock()->now();
+      message.header.frame_id = "map";
       parking_interface::msg::Parkinglist lst1;
-      N = rand() % 5+ 1;
+      N = rand() % 10+ 1;
       //N = 0;
       parking_interface::msg::Parkinglist lst2;
       parking_interface::msg::Parkinglist lst3;
       lst1.id = -1;
       parking_interface::msg::Point2D pt1;
-      pt1.x = 0;
+      pt1.x = 0 + N;
       pt1.y = 53 + N;
       lst1.pointlist.push_back(pt1);
       parking_interface::msg::Point2D pt2;
-      pt2.x = 0;
-      pt2.y = 244 + N;
+      pt2.x = 0 + N;
+      pt2.y = 250 + N;
       lst1.pointlist.push_back(pt2);
       parking_interface::msg::Point2D pt3;
-      pt3.x = 68;
-      pt3.y = 244 + N;
+      pt3.x = 150 + N;
+      pt3.y = 250 + N;
       lst1.pointlist.push_back(pt3);
       parking_interface::msg::Point2D pt4;
-      pt4.x = 68;
-      pt4.y = 253 + N;
+      pt4.x = 150 + N;
+      pt4.y = 53 + N;
       lst1.pointlist.push_back(pt4);
       message.parkinglist.push_back(lst1);
-      // lst1.pointlist[0].x = 0 ;
-      // lst1.pointlist[0].y = 53 + N;      
-      // lst1.pointlist[3].x = 150 ;
-      // lst1.pointlist[3].y = 53 + N;
-      // lst1.pointlist[1].x = 0 ;
-      // lst1.pointlist[1].y = 250 + N;
-      // lst1.pointlist[2].x = 150 ;
-      // lst1.pointlist[2].x = 250 + N;
-      // message.parkinglist.push_back(lst1);
-
-      // lst2.pointlist[0].x = 214 ;
-      // lst2.pointlist[0].y = 53 + N;      
-      // lst2.pointlist[3].x = 290 ;
-      // lst2.pointlist[3].y = 53 + N;
-      // lst2.pointlist[1].x = 214 ;
-      // lst2.pointlist[1].y = 251 + N;
-      // lst2.pointlist[2].x = 290 ;
-      // lst2.pointlist[2].x = 251 + N;
-      // message.parkinglist.push_back(lst2);
-
-      // lst3.pointlist[0].x = 290 ;
-      // lst3.pointlist[0].y = 167 + N;      
-      // lst3.pointlist[3].x = 358 ;
-      // lst3.pointlist[3].y = 167 + N;
-      // lst3.pointlist[1].x = 290 ;
-      // lst3.pointlist[1].y = 249 + N;
-      // lst3.pointlist[2].x = 358 ;
-      // lst3.pointlist[2].x = 249 + N;
-      // message.parkinglist.push_back(lst3);
+      
+      lst2.id = -1;
+      pt1.x = 214 + N;
+      pt1.y = 53 + N;
+      lst2.pointlist.push_back(pt1);
+      pt2.x = 214 + N;
+      pt2.y = 251 + N;
+      lst2.pointlist.push_back(pt2);
+      pt3.x = 290 + N;
+      pt3.y = 251 + N;
+      lst2.pointlist.push_back(pt3);
+      pt4.x = 290 + N;
+      pt4.y = 53 + N;
+      lst2.pointlist.push_back(pt4);
+      message.parkinglist.push_back(lst2);
+      
+      lst3.id = -1;
+      pt1.x = 290 + N;
+      pt1.y = 167 + N;
+      lst3.pointlist.push_back(pt1);
+      pt2.x = 290 + N;
+      pt2.y = 249 + N;
+      lst3.pointlist.push_back(pt2);
+      pt3.x = 358 + N;
+      pt3.y = 249 + N;
+      lst3.pointlist.push_back(pt3);
+      pt4.x = 358 + N;
+      pt4.y = 167 + N;
+      lst3.pointlist.push_back(pt4);
+      message.parkinglist.push_back(lst3);
+      
       RCLCPP_INFO(this->get_logger(), "radar data publishing...");
       publisher_->publish(message);
     }
